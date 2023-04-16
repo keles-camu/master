@@ -1,0 +1,175 @@
+---
+title: "UD1 N03"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+# Operaciones de descripción y agrupación sobre tablas
+
+# Operaciones agregantes
+
+`apply` y `sapply` aplican una función agregante por fila ó columna
+
+```{r}
+A <- array(1:20,dim=c(4,5))
+A
+
+help(apply)
+apply(A,1,sum) # el valor 1 indica que se aplica la función por filas
+apply(A,2,max) # el valor 2 indica que se aplica la función por columnas
+apply(A,1,is.vector)
+```
+
+```{r}
+help(sapply)
+```
+
+```{r}
+data(cars) #carga el dataset cars
+help(cars) #descripción del dataset
+cars
+dim(cars) #dimensión de cars
+summary(cars) #sumario express del mismo
+help(sapply) #ayuda sobre sapply
+sapply(cars,class) #devuelve la clase de cada columna
+sapply(cars,log) #devuelve el logaritmo de cada columna
+```
+
+`tapply`hace también aplicación agregada pero sobre listas
+
+```{r}
+help(tapply)
+hijos<-c(1,3,2,2,3,5,3,2,1,2,3,1,2,4,1,0)
+prov<-c("lu","co","lu","po","co","or","co","lu","lu","po","co","or","co","co","lu","po")
+provf<-factor(prov)
+tapply(hijos,provf,mean) #hace la media por categorías relacionando las listas hijos y provf
+```
+
+## Carga de un dataset y descripción básica
+
+Usamos las funciones `read.csv` y `write.csv` para cargar y leer *.csv*. La herramienta de lectura tiene un sistema automático de inferencia de formato que funciona en casi todas las cargas de tablas.
+
+```{r}
+data() #visualiza los datos disponibles
+data("USArrests") #carga un dataset del repositorio de R
+USArrests
+
+write.csv(USArrests,"USArrests.csv") #escribe el dataset en .csv
+write.csv(USArrests,"USArrests.csv",sep = ";") #escribe en .csv con separador ;
+read.csv("USArrests.csv") #lee el dataset
+dat <- read.csv("USArrests.csv",row.names = 'X')
+dat
+```
+
+## `dplyr` aplicaciones
+
+Es una librería centrada en agrupación de datos y selección de los mismos.
+
+Las operaciones centrales que podemos realizar:
+
+1.  select() seleccionar columnas
+2.  filter() seleccionar filas
+3.  arrange() ordenar los datos
+4.  mutate() transformar una columna
+5.  summarise() agregar los datos agrupados previamente
+6.  group_by() agrupar los datos por una clave, habitualmente una o varias columnas
+7.  left_join() ensamblar dataframes
+
+Veamos con ejemplos lo que puede hacer:
+
+Primero, instalamos y cargamos la librería.
+
+```{r}
+install.packages("dplyr")
+library(dplyr)
+```
+
+Cargamos los datos y observamos las primeras filas.
+
+```{r}
+data("airquality")
+head(airquality)
+```
+
+**select** Seleccionamos variables específicas de nuestro data.frame
+
+```{r}
+select(airquality, Ozone, Solar.R, Wind) # seleccionamos las variables Ozone, Solar.R y Wind
+```
+
+**filter** Filtramos los registros de nuestro data.frame según los valores que tomen ciertas variables.
+
+```{r}
+filter(airquality, Temp > 70) # filtramos los registros con temperatura superior a 70
+filter(airquality, Temp > 80 & Month > 5) # igual pero añadimos la condición mes superior a 5
+```
+
+**arrange** Ordenamos los registros en base a una o varias variables.
+
+```{r}
+arrange(airquality, desc(Month), Day) # ordena según mes (de manera descendente) y por día (de manera ascendente)
+```
+
+**mutate** Modificamos los valores de una variable.
+
+En este caso creamos una nueva variable a partir de otra: pasamos la variable temperatura, que estaba en grados Fahrenheit, a grados Celsius.
+
+```{r}
+mutate(airquality, TempInC = (Temp - 32) * 5 / 9) # Creamos la variable TempInC a partir de la variable Temp
+```
+
+**summarise** Calcula características estadísticas sobre variables.
+
+```{r}
+summarise(airquality, mean(Temp, na.rm = TRUE)) # calcula la media de la temperatura ignorando valores faltantes
+```
+
+**group_by** En multitud de ocasiones buscaremos obtener datos agregados según los valores que tome cierta variable.
+
+Los datos agregados serán resultado de ejercer operaciones sobre el resto de operaciones. Por ejemplo, podemos agrupar por la variable Month y tomar la media de la temperatura para cada mes utilizando la función summarise
+
+```{r}
+summarise(group_by(airquality, Month), mean(Temp, na.rm = TRUE)) # agrupa por mes y calcula la temperatura media en dicho mes
+```
+
+**left_join** Nos permite enlazar varias tablas de manera horizontal (i.e. a nivel de registros).
+
+Supongamos que tenemos una tabla "master" donde nos viene el ID de una persona junto a su nombre y también tenemos una tabla "colores" con el ID de la persona y su color favorito.
+
+Si cruzamos la tabla "master" con la tabla "colores" por la variable ID, obtendremos una tabla con el ID, el nombre y el color favorito de la persona.
+
+Creamos los dos data.frame:
+
+```{r}
+IDs <- c("0001", "0002", "0003")
+nombres <- c("Álvaro", "Miriam", "Laura")
+colores_fav <- c("Azul marino", "Lila", "Azul turquesa")
+
+master <- data.frame(IDs, nombres)
+colores <- data.frame(IDs, colores_fav)
+
+master
+colores
+```
+
+Ahora, realizaremos un join de la tabla master con la tabla colores:
+
+```{r}
+left_join(master, colores, by="IDs")
+```
+
+**Más funciones** La librería dplyr cuenta con múltiples funciones. Una función de uso muy habitual es **count**.
+
+```{r}
+count(airquality, Month) #cuenta el número de registros para cada valor del variable Month
+```
+
+Con el operador **pipe** `%>%` se pueden hacer las transformaciones anteriores en forma de secuencia, esto es una sintaxis muy cómoda para trabajar sobre las tablas
+
+```{r}
+airquality %>% 
+    filter(Month != 5) %>% # filtra por meses distintos de 5
+    group_by(Month) %>% # agrupa por mes
+    summarise(mean(Temp, na.rm = TRUE)) # calcula la media
+```

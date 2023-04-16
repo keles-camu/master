@@ -1,0 +1,173 @@
+---
+title: "ACTIVIDAD 1 UD 1 SOLUCIONES"
+output:
+  pdf_document: default
+  html_notebook: default
+  html_document: default
+---
+
+## Apartado A
+
+Crea un dataframe a partir de los vectores X \<- c(1,2,3,1,4,5,2) Y \<- c(0,3,2,0,5,9,3)
+
+1)  Elimina los duplicados usando una función de R adecuada . Mirar help(unique)
+
+2)  Pon nombre a las filas con nombres "CA","SE","MA","BA","VA"
+
+3)  Crea una nueva columna Z que sea la suma de las dos primeras dividida por la primera
+
+4)  Cambia el valor X de la provicincia BA por 2
+
+5)  Selecciona aquellas provincias cuyo valor Y sea menor que 4
+
+6)  Crea un factor que indique si es costera o no la ciudad (C ó I) y añádelo como columna
+
+```{r}
+X <- c(1,2,3,1,4,5,2)
+Y <- c(0,3,2,0,5,9,3)
+M <- data.frame(X,Y)
+M
+```
+
+-   
+
+    1)  Elimina los duplicados usando una función de R adecuada .
+
+```{r}
+M <- unique(M) 
+M
+```
+
+-   
+
+    2)  Pon nombre a las filas con nombres "CA","SE","MA","BA","VA"
+
+```{r}
+rownames(M) <- c("CA","SE","MA","BA","VA") 
+M
+```
+
+-   
+
+    3)  Crea una nueva columna Z que sea la suma de las dos primeras dividida por la primera
+
+```{r}
+M$Z <- (M$X+M$Y)/M$X 
+M
+```
+
+-   
+
+    4)  Cambia el valor X de la provincia BA por 2
+
+```{r}
+M[rownames(M)=="BA","X"] <-2 
+M
+```
+
+-   
+
+    5)  Selecciona aquellas provincias cuyo valor Y sea menor que 4
+
+```{r}
+M[M$Y<4,] 
+M
+```
+
+-   
+
+    6)  Crea un factor que indique si es costera o no la ciudad (C ó I) y añádelo como columna
+
+```{r}
+M$costa <- factor(c("C","I","I","C","C")) 
+M
+
+lapply(M,class) # Especifica el tipo de dato de cada columna del dataframe
+M
+```
+
+## Apartado B
+
+1.  Carga el dataset en la url <http://archive.ics.uci.edu/ml/machine-learning-databases/autos/imports-85.data> indicando que los valores faltantes son "?"
+2.  Haz un sumario del dataframe.
+3.  ¿Qué dimensión tiene el dataframe?
+4.  Inspecciona los datos, de qué clase es cada tipo? Extrae los distintos valores que toman los factores.
+5.  Indica la proporción de valores faltantes por columna usando sum e is.na y un apply (usa nrow).
+6.  Edita la primera columna llevándola al rango 0-5.
+7.  Da una media de los valores de la primera columna respecto a la columna de número de puertas del coche.
+8.  Extrae los coches audi que son cuatro puertas con valor V13 menor que 55
+
+-   
+
+    1.  Carga el dataset en la url <http://archive.ics.uci.edu/ml/machine-learning-databases/autos/imports-85.data> indicando que los valores faltantes son "?"
+
+```{r}
+url <- 'http://archive.ics.uci.edu/ml/machine-learning-databases/autos/imports-85.data'
+dat <- read.csv(url,na.strings = "?",header=FALSE)
+
+View(dat) #abre una pestaña en RStudio con la tabla para verla con mayor precisión
+```
+
+-   
+
+    2.  Haz un sumario del dataframe.
+
+```{r}
+summary(dat) 
+```
+
+-   
+
+    3.  ¿Qué dimensión tiene el dataframe?
+
+```{r}
+dim(dat) 
+```
+
+-   
+
+    4.  Inspecciona los datos, de qué clase es cada tipo? Extrae los distintos valores que toman los factores.
+
+```{r}
+sapply(dat,class) # Clase de cada columna
+unique(dat$V1) #saca los valores únicos de la columna V1
+#incluímos una función para ver cómo se puede hacer automáticamente este apartado. Los bucles los veremos en el siguiente notebook así como las funciones
+factores<- which(sapply(dat,class)=="character") # seleccionamos las variables categóricas (factores)
+for (i in 1:length(factores)){ # para cada variable categórica mostramos los distintos valores que toma
+ print(unique(dat[,factores[i]]))
+}
+```
+
+-   
+
+    5.  Indica la proporción de valores faltantes por columna usando sum e is.na y un apply (usa nrow).
+
+```{r}
+apply(is.na(dat),2,sum)/nrow(dat)*100 
+```
+
+-   
+
+    6.  Edita la primera columna llevándola al rango 0-5. Gracias a summary descubrimos que su mín es -2 y su máx es 3.
+
+```{r}
+dat$V1 <- dat$V1+2 
+dat$V1
+```
+
+-   
+
+    7.  Da una media de los valores de la primera columna respecto a la columna de número de puertas del coche.
+
+```{r}
+tapply(dat$V1, dat$V6, mean) 
+head(dat)
+```
+
+-   
+
+    8.  Extrae los coches audi que son cuatro puertas con valor V13 menor que 55
+
+```{r}
+dat[(dat$V3=="audi")&(dat$V6=="four")&(dat$V13<55),] 
+```
